@@ -1,0 +1,55 @@
+{
+	"name": "iextlibraries",
+	"icon": "library.png",
+	"displayName": "External libraries",
+	"description": "Add external libraries to project as symlinks",
+	"version": "0.0.1",
+	"publisher": "itemcoder",
+	"engines": {
+		"vscode": "^1.60.0"
+	},
+	"bugs": {
+		"url": "https://github.com/mahbubur001/vscode-iextlibraries/issues",
+		"email": "mahbubur001@gmail.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/mahbubur001/vscode-iextlibraries.git"
+	},
+	"homepage": "https://github.com/mahbubur001/vscode-iextlibraries/blob/master/README.md",
+	"categories": [
+		"Snippets",
+		"Other"
+	],
+	"activationEvents": [
+		"onCommand:iExt.addLibrary"
+	],
+	"main": "./extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "iExt.addLibrary",
+				"title": "iExtLibraries: Add external library"
+			}
+		]
+	},
+	"scripts": {
+		"lint": "eslint .",
+		"pretest": "yarn run lint",
+		"test": "node ./test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/glob": "^7.1.3",
+		"@types/mocha": "^8.0.4",
+		"@types/node": "^12.11.7",
+		"@types/vscode": "^1.60.0",
+		"eslint": "^7.19.0",
+		"glob": "^7.1.6",
+		"mocha": "^8.2.1",
+		"typescript": "^4.1.3",
+		"vscode-test": "^1.5.0"
+	},
+	"dependencies": {
+		"fs-extra": "^10.0.0"
+	}
+}
