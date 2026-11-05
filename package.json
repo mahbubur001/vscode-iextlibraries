@@ -1,8 +1,8 @@
 {
   "name": "iextlibraries",
-  "displayName": "iExternal libraries",
+  "displayName": "iExternal Libraries — PhpStorm Include Paths",
   "description": "PhpStorm-style External Libraries for VS Code: add folders outside the project (WordPress core, shared plugins, SDKs, stubs) as include paths, browse them in an External Libraries view and index them for PHP completion and navigation — without touching the project.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "itemcoder",
   "license": "MIT",
   "icon": "media/icon.png",

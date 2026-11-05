@@ -1,4 +1,4 @@
-# iExternal libraries
+# iExternal Libraries — PhpStorm Include Paths
 
 PhpStorm's **External Libraries** for VS Code. Add folders that live outside your project — WordPress core,
 WooCommerce, a shared plugin, an SDK, PHP stubs — as **include paths**: browse them in an *External Libraries* view
@@ -9,13 +9,26 @@ linked into the project, so git and deployment never see them.
 
 ## Features
 
-| PhpStorm | iExternal libraries |
+| PhpStorm | iExternal Libraries |
 |---|---|
 | *Settings → PHP → Include Path* | `iextlibraries.includePaths` in the workspace settings |
 | *External Libraries* node in the Project tool window | **External Libraries** view in the Explorer — browse, open files, reveal in Finder / Explorer, copy path |
 | Include paths are indexed for code intelligence | Kept in sync with [Intelephense](https://marketplace.visualstudio.com/items?itemName=bmewburn.vscode-intelephense-client) (`intelephense.environment.includePaths`) |
 | Nothing is added to the project | Nothing is added to the project |
 | — | **Import from PhpStorm**: reads the include paths of `.idea/php.xml` |
+
+### Code intelligence from the library
+
+Completion, hover and *Go to Definition* resolve into the external folders — here *Peek Definition* on a WooCommerce
+function opens it from the external `woocommerce` folder, which is not part of the project:
+
+![Peek Definition resolving into an external library](docs/images/go-to-definition.png)
+
+### One-click import from PhpStorm
+
+A project with PhpStorm settings offers **Import from PhpStorm**, which reads the include paths of `.idea/php.xml`:
+
+![Import from PhpStorm: empty view, then the imported libraries](docs/images/import-from-phpstorm.png)
 
 ## Getting started
 

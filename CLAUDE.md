@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-iExternal libraries (`itemcoder.iextlibraries`) reproduces PhpStorm's **External Libraries** / PHP **Include Path** in
+iExternal Libraries (`itemcoder.iextlibraries`, display name "iExternal Libraries — PhpStorm Include Paths") reproduces PhpStorm's **External Libraries** / PHP **Include Path** in
 VS Code: folders outside the project are stored as include paths, shown in an *External Libraries* view in the Explorer,
 and mirrored into Intelephense for code intelligence. Nothing is written into the project tree. Sister extension of
 iRemote (`itemcoder.iremote`, github.com/mahbubur001/iremote) with the same tooling, release flow and visual style;

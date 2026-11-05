@@ -1,4 +1,4 @@
-// Pure logic for iExternal libraries. No `vscode` import, so it runs in plain Node unit tests.
+// Pure logic for iExternal Libraries. No `vscode` import, so it runs in plain Node unit tests.
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');

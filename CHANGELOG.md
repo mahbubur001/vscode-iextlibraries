@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- Name: **iExternal Libraries — PhpStorm Include Paths**.
+- README: screenshots of Go to Definition into a library and of Import from PhpStorm.
+
 ## 1.0.0
 
 Rebuilt after PhpStorm's External Libraries.
