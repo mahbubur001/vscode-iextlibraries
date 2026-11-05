@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a2240"/><stop offset="1" stop-color="#0c1022"/></linearGradient>
+<linearGradient id="ink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2ee6d6"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+<radialGradient id="glow" cx="0.5" cy="0.62" r="0.55"><stop offset="0" stop-color="#7c5cff" stop-opacity="0.45"/><stop offset="1" stop-color="#7c5cff" stop-opacity="0"/></radialGradient></defs><rect width="512" height="512" rx="112" fill="url(#bg)"/><rect width="512" height="512" rx="112" fill="url(#glow)"/>
+<rect x="3" y="3" width="506" height="506" rx="110" fill="none" stroke="#fff" stroke-opacity="0.08" stroke-width="6"/>
+<rect x="104" y="150" width="58" height="230" rx="14" fill="#fff"/>
+<rect x="174" y="118" width="58" height="262" rx="14" fill="#e4e1ff"/>
+<g transform="rotate(-16 320 380)"><rect x="268" y="168" width="58" height="230" rx="14" fill="#c9c3ff"/></g>
+<g stroke="#5b47f5" stroke-width="10" stroke-linecap="round"><path d="M120 196h26"/><path d="M190 164h26"/><path d="M120 330h26"/><path d="M190 330h26"/></g>
+<rect x="96" y="388" width="300" height="26" rx="13" fill="#fff" fill-opacity="0.9"/><g transform="translate(18 -6)" fill="none" stroke="url(#ink)" stroke-width="30" stroke-linecap="round">
+<path d="M352 196 l-26 26 a36 36 0 0 1 -51 -51 l26 -26"/>
+<path d="M352 146 l26 -26 a36 36 0 0 1 51 51 l-26 26"/>
+<path d="M318 180 l52 -52"/></g></svg>

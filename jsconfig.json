@@ -1,13 +1,22 @@
 {
-	"compilerOptions": {
-		"module": "commonjs",
-		"target": "es6",
-		"checkJs": true,  /* Typecheck .js files. */
-		"lib": [
-			"es6"
-		]
-	},
-	"exclude": [
-		"node_modules"
-	]
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2022",
+    "lib": [
+      "es2022"
+    ],
+    "types": [
+      "node",
+      "vscode"
+    ],
+    "checkJs": true,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "maxNodeModuleJsDepth": 0
+  },
+  "include": [
+    "src",
+    "test"
+  ]
 }
