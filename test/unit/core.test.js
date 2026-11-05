@@ -46,7 +46,7 @@ test('parsePhpStormIncludePaths reads include_path entries and expands PhpStorm 
   assert.deepEqual(parsePhpStormIncludePaths(xml, project, home), [
     path.join(home, 'Downloads', 'woocommerce-delivery-notes'),
     path.join(tmp, 'wordpress'),
-    path.resolve('/opt/stubs & more'),
+    path.resolve(project, '/opt/stubs & more'), // a drive-less absolute path stays on the project's drive (Windows)
   ]);
   assert.deepEqual(parsePhpStormIncludePaths('<project version="4"></project>', project, home), []);
 });
