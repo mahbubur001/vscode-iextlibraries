@@ -1,82 +1,125 @@
+const fs = require('node:fs/promises');
+const path = require('node:path');
 const vscode = require('vscode');
-const { PREFIX, resolveSource, defaultName, validateName, linkPath, exists, createLink, describeError } = require('./links');
+const { isDirectory, parsePhpStormIncludePaths, resolveInput } = require('./core');
+const { LibraryStore } = require('./libraries');
+const { LibraryTree } = require('./tree');
 
-/** Workspace folder to link into; asks when there are several. */
-const pickWorkspaceFolder = async () => {
-  const folders = (vscode.workspace.workspaceFolders ?? []).filter((f) => f.uri.scheme === 'file');
-  if (folders.length === 0) {
-    void vscode.window.showErrorMessage('Open a folder first: external libraries are linked into a workspace folder.');
-    return undefined;
+const VIEW_ID = 'iextlibraries.libraries';
+
+/** PhpStorm's .idea/php.xml in a workspace folder, if any. */
+const phpStormConfigs = async () => {
+  /** @type {{ folder: vscode.WorkspaceFolder, file: string }[]} */
+  const found = [];
+  for (const folder of vscode.workspace.workspaceFolders ?? []) {
+    const file = path.join(folder.uri.fsPath, '.idea', 'php.xml');
+    if (await fs.access(file).then(() => true, () => false)) found.push({ folder, file });
   }
-  return folders.length === 1 ? folders[0] : vscode.window.showWorkspaceFolderPick({ placeHolder: 'Add the external library to which folder?' });
+  return found;
 };
 
 /**
- * Asks for the external file or folder. Native dialogs cannot pick files and folders at once on Windows and Linux,
- * so the type is chosen first; typing a path is kept for pasting.
- * @param {vscode.WorkspaceFolder} folder
- * @returns {Promise<string | undefined>}
+ * @param {LibraryStore} store
+ * @param {readonly string[]} paths
  */
-const pickSource = async (folder) => {
-  const choice = await vscode.window.showQuickPick(
-    [
-      { label: '$(folder) Folder…', pick: 'folder' },
-      { label: '$(file) File…', pick: 'file' },
-      { label: '$(edit) Enter a path…', pick: 'path' },
-    ],
-    { placeHolder: 'Add an external folder or file to the project' },
-  );
-  if (!choice) return undefined;
-  if (choice.pick === 'path') {
-    const input = await vscode.window.showInputBox({
-      prompt: 'Path of the external folder or file (absolute, ~/…, or relative to the workspace folder)',
-      placeHolder: '/path/to/library',
-      ignoreFocusOut: true,
-      validateInput: async (value) => {
-        if (!value.trim()) return undefined;
-        return (await exists(resolveSource(value, folder.uri.fsPath))) ? undefined : 'No file or folder at this path.';
-      },
-    });
-    return input?.trim() ? resolveSource(input, folder.uri.fsPath) : undefined;
-  }
-  const uris = await vscode.window.showOpenDialog({
-    canSelectFiles: choice.pick === 'file',
-    canSelectFolders: choice.pick === 'folder',
-    canSelectMany: false,
-    openLabel: 'Add as External Library',
-  });
-  return uris?.[0]?.fsPath;
+const addPaths = async (store, paths) => {
+  const added = await store.add(paths);
+  if (added === 0) void vscode.window.showInformationMessage('Already in External Libraries.');
+  else await vscode.commands.executeCommand(`${VIEW_ID}.focus`);
 };
 
-const addLibrary = async () => {
-  const folder = await pickWorkspaceFolder();
-  if (!folder) return;
-  const source = await pickSource(folder);
-  if (!source) return;
-
-  const name = await vscode.window.showInputBox({
-    prompt: `Name of the link in "${folder.name}" (created as ${PREFIX}<name>)`,
-    value: defaultName(source),
-    ignoreFocusOut: true,
-    validateInput: async (value) =>
-      validateName(value) ?? ((await exists(linkPath(folder.uri.fsPath, value))) ? `${PREFIX}${value} already exists in "${folder.name}".` : undefined),
-  });
-  if (name === undefined) return;
-
-  const link = linkPath(folder.uri.fsPath, name);
-  try {
-    await createLink(source, link);
-  } catch (error) {
-    void vscode.window.showErrorMessage(`Could not add the external library: ${describeError(error, link)}`);
+/** @param {LibraryStore} store */
+const addLibrary = async (store) => {
+  if (!vscode.workspace.workspaceFolders?.length) {
+    void vscode.window.showErrorMessage('Open a folder first: external libraries belong to a workspace.');
     return;
   }
-  const reveal = await vscode.window.showInformationMessage(`Linked ${source} as ${PREFIX}${name} in "${folder.name}".`, 'Reveal in Explorer');
-  if (reveal) await vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(link));
+  const choice = await vscode.window.showQuickPick(
+    [
+      { label: '$(folder-opened) Choose Folders…', description: 'pick one or more folders', pick: 'browse' },
+      { label: '$(edit) Enter a Path…', description: 'absolute, ~/…, or relative to the workspace', pick: 'path' },
+    ],
+    { title: 'Add External Library', placeHolder: 'Folders outside the project to index for completion and navigation' },
+  );
+  if (!choice) return;
+  if (choice.pick === 'browse') {
+    const uris = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, canSelectMany: true, openLabel: 'Add to External Libraries' });
+    if (uris?.length) await addPaths(store, uris.map((u) => u.fsPath));
+    return;
+  }
+  const input = await vscode.window.showInputBox({
+    title: 'Add External Library',
+    prompt: 'Folder path',
+    placeHolder: '~/code/wordpress',
+    ignoreFocusOut: true,
+    validateInput: async (value) => (!value.trim() || (await isDirectory(resolveInput(value, store.base))) ? undefined : 'No folder at this path.'),
+  });
+  if (input?.trim()) await addPaths(store, [resolveInput(input, store.base)]);
 };
 
-/** @param {vscode.ExtensionContext} context */
+/** @param {LibraryStore} store */
+const importPhpStorm = async (store) => {
+  const configs = await phpStormConfigs();
+  const lists = await Promise.all(
+    configs.map(({ folder, file }) => fs.readFile(file, 'utf8').then((xml) => parsePhpStormIncludePaths(xml, folder.uri.fsPath), () => [])),
+  );
+  const all = lists.flat();
+  if (all.length === 0) {
+    void vscode.window.showInformationMessage(configs.length ? 'No include paths in .idea/php.xml.' : 'No PhpStorm project (.idea/php.xml) in this workspace.');
+    return;
+  }
+  const added = await store.add(all);
+  void vscode.window.showInformationMessage(
+    added ? `Imported ${added} include path${added === 1 ? '' : 's'} from PhpStorm.` : 'All PhpStorm include paths are already in External Libraries.',
+  );
+};
+
+/**
+ * Library node passed by a view context menu, or the user picks one.
+ * @param {LibraryStore} store
+ * @param {{ path: string } | undefined} node
+ */
+const pickLibrary = async (store, node) => {
+  if (node) return node.path;
+  const items = store.libraries.map((l) => ({ label: path.basename(l.path), description: l.stored, path: l.path }));
+  if (items.length === 0) return undefined;
+  return (await vscode.window.showQuickPick(items, { title: 'Remove External Library' }))?.path;
+};
+
+/**
+ * @param {vscode.ExtensionContext} context
+ * @returns {{ store: LibraryStore, tree: LibraryTree }} exposed for the end-to-end tests
+ */
 function activate(context) {
-  context.subscriptions.push(vscode.commands.registerCommand('iExt.addLibrary', addLibrary));
+  const store = new LibraryStore(context.workspaceState);
+  const tree = new LibraryTree(store);
+  const view = vscode.window.createTreeView(VIEW_ID, { treeDataProvider: tree, showCollapseAll: true });
+
+  const updateContext = async () => {
+    await vscode.commands.executeCommand('setContext', 'iextlibraries.hasPhpStormProject', (await phpStormConfigs()).length > 0);
+  };
+
+  context.subscriptions.push(
+    store,
+    tree,
+    view,
+    vscode.workspace.onDidChangeWorkspaceFolders(() => void updateContext()),
+    vscode.commands.registerCommand('iextlibraries.add', () => addLibrary(store)),
+    vscode.commands.registerCommand('iextlibraries.importPhpStorm', () => importPhpStorm(store)),
+    vscode.commands.registerCommand('iextlibraries.refresh', () => tree.refresh()),
+    vscode.commands.registerCommand('iextlibraries.configure', () => vscode.commands.executeCommand('workbench.action.openWorkspaceSettings', `@ext:itemcoder.iextlibraries`)),
+    vscode.commands.registerCommand('iextlibraries.remove', async (/** @type {{ path: string } | undefined} */ node) => {
+      const target = await pickLibrary(store, node);
+      if (target) await store.remove(target);
+    }),
+    vscode.commands.registerCommand('iextlibraries.revealInOS', (/** @type {{ path: string }} */ node) =>
+      vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(node.path)),
+    ),
+    vscode.commands.registerCommand('iextlibraries.copyPath', (/** @type {{ path: string }} */ node) => vscode.env.clipboard.writeText(node.path)),
+  );
+  void updateContext();
+  void store.syncIntelephense();
+  return { store, tree };
 }
 
 function deactivate() {}

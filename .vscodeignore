@@ -1,6 +1,7 @@
 **
 !src/**
 !media/icon.png
+!media/view.svg
 !package.json
 !README.md
 !CHANGELOG.md

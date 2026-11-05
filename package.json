@@ -1,8 +1,8 @@
 {
   "name": "iextlibraries",
   "displayName": "iExternal libraries",
-  "description": "PhpStorm-style External Libraries for VS Code: link folders or files from outside the project (WordPress core, shared plugins, SDKs) into the workspace for code completion and navigation.",
-  "version": "0.1.0",
+  "description": "PhpStorm-style External Libraries for VS Code: add folders outside the project (WordPress core, shared plugins, SDKs, stubs) as include paths, browse them in an External Libraries view and index them for PHP completion and navigation — without touching the project.",
+  "version": "1.0.0",
   "publisher": "itemcoder",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -18,17 +18,22 @@
   },
   "homepage": "https://github.com/mahbubur001/vscode-iextlibraries#readme",
   "categories": [
+    "Programming Languages",
     "Other"
   ],
   "keywords": [
     "external libraries",
-    "symlink",
-    "phpstorm",
     "include path",
-    "intellisense",
-    "wordpress"
+    "phpstorm",
+    "php",
+    "intelephense",
+    "wordpress",
+    "library"
   ],
   "main": "./src/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": true
@@ -38,11 +43,153 @@
   "contributes": {
     "commands": [
       {
-        "command": "iExt.addLibrary",
+        "command": "iextlibraries.add",
         "title": "Add External Library…",
-        "category": "iExternal Libraries"
+        "category": "External Libraries",
+        "icon": "$(add)"
+      },
+      {
+        "command": "iextlibraries.importPhpStorm",
+        "title": "Import Include Paths from PhpStorm",
+        "category": "External Libraries",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "iextlibraries.remove",
+        "title": "Remove External Library",
+        "category": "External Libraries",
+        "icon": "$(close)"
+      },
+      {
+        "command": "iextlibraries.refresh",
+        "title": "Refresh",
+        "category": "External Libraries",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "iextlibraries.configure",
+        "title": "Configure External Libraries",
+        "category": "External Libraries",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "iextlibraries.revealInOS",
+        "title": "Reveal in File Manager",
+        "category": "External Libraries"
+      },
+      {
+        "command": "iextlibraries.copyPath",
+        "title": "Copy Path",
+        "category": "External Libraries"
       }
-    ]
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "iextlibraries.libraries",
+          "name": "External Libraries",
+          "icon": "media/view.svg",
+          "contextualTitle": "External Libraries"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "iextlibraries.libraries",
+        "contents": "Folders outside the project — WordPress core, shared plugins, SDKs — indexed for completion and navigation, like PhpStorm's External Libraries.\n[Add External Library](command:iextlibraries.add)",
+        "when": "workspaceFolderCount > 0 && !iextlibraries.hasPhpStormProject"
+      },
+      {
+        "view": "iextlibraries.libraries",
+        "contents": "Folders outside the project — WordPress core, shared plugins, SDKs — indexed for completion and navigation, like PhpStorm's External Libraries.\n[Add External Library](command:iextlibraries.add)\nThis project has PhpStorm settings.\n[Import from PhpStorm](command:iextlibraries.importPhpStorm)",
+        "when": "workspaceFolderCount > 0 && iextlibraries.hasPhpStormProject"
+      },
+      {
+        "view": "iextlibraries.libraries",
+        "contents": "Open a folder to add external libraries.\n[Open Folder](command:workbench.action.files.openFolder)",
+        "when": "workspaceFolderCount == 0"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "iextlibraries.add",
+          "when": "view == iextlibraries.libraries",
+          "group": "navigation@1"
+        },
+        {
+          "command": "iextlibraries.refresh",
+          "when": "view == iextlibraries.libraries",
+          "group": "navigation@2"
+        },
+        {
+          "command": "iextlibraries.importPhpStorm",
+          "when": "view == iextlibraries.libraries && iextlibraries.hasPhpStormProject",
+          "group": "more@1"
+        },
+        {
+          "command": "iextlibraries.configure",
+          "when": "view == iextlibraries.libraries",
+          "group": "more@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "iextlibraries.remove",
+          "when": "view == iextlibraries.libraries && viewItem == library",
+          "group": "inline"
+        },
+        {
+          "command": "iextlibraries.revealInOS",
+          "when": "view == iextlibraries.libraries",
+          "group": "1_reveal@1"
+        },
+        {
+          "command": "iextlibraries.copyPath",
+          "when": "view == iextlibraries.libraries",
+          "group": "1_reveal@2"
+        },
+        {
+          "command": "iextlibraries.remove",
+          "when": "view == iextlibraries.libraries && viewItem == library",
+          "group": "2_remove@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "iextlibraries.revealInOS",
+          "when": "false"
+        },
+        {
+          "command": "iextlibraries.copyPath",
+          "when": "false"
+        },
+        {
+          "command": "iextlibraries.refresh",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "External Libraries",
+      "properties": {
+        "iextlibraries.includePaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "window",
+          "markdownDescription": "Folders outside the project shown under **External Libraries** and indexed for code intelligence (PhpStorm: *Settings → PHP → Include Path*). Absolute paths, `~/…`, or paths relative to the first workspace folder."
+        },
+        "iextlibraries.intelephense.sync": {
+          "type": "boolean",
+          "default": true,
+          "scope": "window",
+          "markdownDescription": "Keep `#intelephense.environment.includePaths#` in sync with the external libraries so Intelephense indexes them. Entries you add to Intelephense yourself are kept."
+        }
+      }
+    }
   },
   "scripts": {
     "lint": "eslint .",
